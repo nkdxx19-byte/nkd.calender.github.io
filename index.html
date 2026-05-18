@@ -15,12 +15,12 @@
     --success-color: #2ecc71;
     --todo-color: #f39c12;
     
-    /* カスタムテーマ用変数 (JSで上書きされます) */
+    /* カスタムテーマ用変数 */
     --theme-top-bg: #ffffff;
     --theme-top-text: #333333;
     --theme-grid-bg: #dddddd;
     --theme-bg-image: none;
-    --theme-cell-opacity: 1; /* 0(透明) 〜 1(不透明) */
+    --theme-cell-opacity: 1;
   }
 
   body {
@@ -50,7 +50,7 @@
   }
   .todo-sidebar.active { display: flex; }
 
-  /* ヘッダー (テーマ反映) */
+  /* ヘッダー */
   .header {
     display: flex; justify-content: space-between; align-items: center; padding: 15px 20px;
     background-color: var(--theme-top-bg); 
@@ -63,7 +63,7 @@
   button {
     background: #fff; border: 1px solid var(--border-color); padding: 8px 12px;
     border-radius: 6px; cursor: pointer; font-size: 0.95rem; transition: all 0.2s;
-    color: #333; /* ボタンの文字色は固定 */
+    color: #333;
   }
   button:hover { background: #f0f0f0; }
   .btn-primary { background: var(--primary-color); color: #fff; border: none; }
@@ -71,7 +71,7 @@
   .btn-outline { border: 1px solid var(--primary-color); color: var(--primary-color); font-weight: bold; }
   .btn-outline:hover { background: var(--primary-color); color: #fff; }
 
-  /* カレンダーグリッド (テーマ反映) */
+  /* カレンダーグリッド */
   .weekdays {
     display: grid; grid-template-columns: repeat(7, 1fr); text-align: center;
     font-weight: bold; padding: 10px 0; font-size: 0.9rem;
@@ -79,16 +79,12 @@
     color: var(--theme-top-text);
     border-bottom: 1px solid var(--theme-grid-bg);
   }
-  /* 曜日の色: テーマが設定されても日曜・土曜の色は保持 */
-  .weekdays div:first-child { color: var(--danger-color); }
-  .weekdays div:last-child { color: #3498db; }
 
   .days {
     flex: 1; display: grid; grid-template-columns: repeat(7, 1fr);
     grid-auto-rows: 1fr; gap: 1px; overflow-y: auto;
     overscroll-behavior-y: contain; 
     
-    /* 背景画像とグリッド色 */
     background-color: var(--theme-grid-bg);
     background-image: var(--theme-bg-image);
     background-size: cover;
@@ -98,7 +94,6 @@
   .day {
     padding: 5px; display: flex; flex-direction: column; overflow: hidden; 
     cursor: pointer; transition: background 0.1s; position: relative;
-    /* セルの透過度設定 (255,255,255=白) */
     background-color: rgba(255, 255, 255, var(--theme-cell-opacity));
   }
   .day:hover { background-color: rgba(249, 249, 249, var(--theme-cell-opacity)); }
@@ -170,7 +165,9 @@
   .category-list { max-height: 150px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #eee; border-radius: 4px; padding: 10px; color: #333;}
   .category-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px dashed #eee; font-size: 0.9rem; }
   .category-color-box { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
-  .delete-cat-btn { background: none; border: none; color: var(--danger-color); cursor: pointer; padding: 0; }
+  .cat-action-btn { background: none; border: none; cursor: pointer; padding: 0 4px; font-size: 0.85rem; }
+  .edit-cat-btn { color: #3498db; }
+  .delete-cat-btn { color: var(--danger-color); }
   .add-category-box { display: flex; gap: 5px; }
 
   /* レスポンシブ対応 */
@@ -211,12 +208,11 @@
         <button id="toggleTodoBtn" class="btn-outline">📝 ToDo</button>
         <button id="openCategoryFilterBtn" class="btn-outline">🔍 一覧</button>
         <button id="manageCategoriesBtn">⚙️ ｶﾃｺﾞﾘ</button>
-        <!-- ★追加: テーマ設定ボタン -->
         <button id="openThemeBtn">🎨 ﾃｰﾏ</button>
       </div>
     </div>
-    <div class="weekdays">
-      <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+    <div class="weekdays" id="weekdaysContainer">
+      <!-- JSで動的に曜日を描画します -->
     </div>
     <div class="days" id="days"></div>
   </div>
@@ -236,10 +232,17 @@
   </div>
 </div>
 
-<!-- ★追加: テーマ設定モーダル -->
+<!-- テーマ設定モーダル -->
 <div class="modal-overlay" id="themeModalOverlay">
   <div class="modal">
     <h3>🎨 テーマ設定</h3>
+    <div class="form-group">
+      <label>カレンダーの始まり曜日</label>
+      <select id="themeStartOfWeekVal" style="font-weight: bold;">
+        <option value="0">日曜日始まり</option>
+        <option value="1">月曜日始まり</option>
+      </select>
+    </div>
     <div class="form-group">
       <label>上部 (ツールバー・曜日) の背景色</label>
       <input type="color" id="themeTopBgVal">
@@ -267,7 +270,7 @@
   </div>
 </div>
 
-<!-- その他のモーダル（予定一覧、追加、カテゴリー等） -->
+<!-- 予定一覧(Day View)モーダル -->
 <div class="modal-overlay" id="dayViewModalOverlay">
   <div class="modal">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -281,6 +284,7 @@
   </div>
 </div>
 
+<!-- カテゴリー別一覧(Filter)モーダル -->
 <div class="modal-overlay" id="categoryFilterModalOverlay">
   <div class="modal">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -294,6 +298,7 @@
   </div>
 </div>
 
+<!-- 予定追加モーダル -->
 <div class="modal-overlay" id="eventModalOverlay">
   <div class="modal">
     <h3 id="modalDateDisplay" style="color: #333;">予定を追加</h3>
@@ -311,63 +316,53 @@
   </div>
 </div>
 
+<!-- ★修正: カテゴリー管理モーダル -->
 <div class="modal-overlay" id="categoryModalOverlay">
   <div class="modal">
     <h3 style="color:#333;">カテゴリー管理</h3>
     <div class="category-list" id="categoryList"></div>
     <div class="form-group">
-      <label>新規追加</label>
+      <label id="categoryFormLabel">新規追加</label>
       <div class="add-category-box">
         <input type="color" id="newCategoryColor" value="#3498db" style="width: 40px; padding: 0;">
         <input type="text" id="newCategoryName" placeholder="カテゴリー名">
         <button id="addCategoryBtn" class="btn-primary">追加</button>
       </div>
+      <button id="cancelEditCategoryBtn" style="display:none; width: 100%; margin-top: 5px;">編集をキャンセル</button>
     </div>
     <div class="modal-actions"><button id="closeCategoryBtn">閉じる</button></div>
   </div>
 </div>
 
 <script>
-  // --- ★追加: テーマ設定処理 ---
+  // --- テーマ設定処理 (週始まりの設定を追加) ---
   const defaultTheme = {
-    topBg: '#ffffff',
-    topText: '#333333',
-    gridBg: '#dddddd',
-    bgImage: null,
-    cellOpacity: 100
+    topBg: '#ffffff', topText: '#333333', gridBg: '#dddddd',
+    bgImage: null, cellOpacity: 100, startOfWeek: 0 // 0:日曜日, 1:月曜日
   };
   let currentTheme = JSON.parse(localStorage.getItem('calendarTheme')) || defaultTheme;
 
   const rootStyles = document.documentElement.style;
   
-  // テーマを画面に適用
   function applyTheme() {
     rootStyles.setProperty('--theme-top-bg', currentTheme.topBg);
     rootStyles.setProperty('--theme-top-text', currentTheme.topText);
     rootStyles.setProperty('--theme-grid-bg', currentTheme.gridBg);
     rootStyles.setProperty('--theme-cell-opacity', currentTheme.cellOpacity / 100);
-    
-    if (currentTheme.bgImage) {
-      rootStyles.setProperty('--theme-bg-image', `url(${currentTheme.bgImage})`);
-    } else {
-      rootStyles.setProperty('--theme-bg-image', 'none');
-    }
+    rootStyles.setProperty('--theme-bg-image', currentTheme.bgImage ? `url(${currentTheme.bgImage})` : 'none');
   }
 
-  // テーマを保存
   function saveTheme() {
     try {
       localStorage.setItem('calendarTheme', JSON.stringify(currentTheme));
     } catch (e) {
       alert('画像サイズが大きすぎるため保存できませんでした。よりファイルサイズの小さい画像を選択してください。');
-      currentTheme.bgImage = null;
-      applyTheme();
-      localStorage.setItem('calendarTheme', JSON.stringify(currentTheme));
+      currentTheme.bgImage = null; applyTheme(); localStorage.setItem('calendarTheme', JSON.stringify(currentTheme));
     }
   }
 
-  // テーマ設定モーダル操作
   const themeModalOverlay = document.getElementById('themeModalOverlay');
+  const themeStartOfWeekVal = document.getElementById('themeStartOfWeekVal');
   const themeTopBgVal = document.getElementById('themeTopBgVal');
   const themeTopTextVal = document.getElementById('themeTopTextVal');
   const themeGridBgVal = document.getElementById('themeGridBgVal');
@@ -375,7 +370,7 @@
   const themeCellOpacityVal = document.getElementById('themeCellOpacityVal');
 
   document.getElementById('openThemeBtn').addEventListener('click', () => {
-    // 現在の値をモーダルの入力欄にセット
+    themeStartOfWeekVal.value = currentTheme.startOfWeek !== undefined ? currentTheme.startOfWeek : 0;
     themeTopBgVal.value = currentTheme.topBg;
     themeTopTextVal.value = currentTheme.topText;
     themeGridBgVal.value = currentTheme.gridBg;
@@ -383,44 +378,34 @@
     themeModalOverlay.style.display = 'flex';
   });
 
-  document.getElementById('closeThemeBtn').addEventListener('click', () => {
-    themeModalOverlay.style.display = 'none';
+  document.getElementById('closeThemeBtn').addEventListener('click', () => themeModalOverlay.style.display = 'none');
+
+  // 週の始まり曜日切り替えイベント
+  themeStartOfWeekVal.addEventListener('change', (e) => { 
+    currentTheme.startOfWeek = parseInt(e.target.value); 
+    saveTheme(); renderCalendar(); 
   });
 
-  // リアルタイム反映＆保存イベント
   themeTopBgVal.addEventListener('input', (e) => { currentTheme.topBg = e.target.value; applyTheme(); saveTheme(); });
   themeTopTextVal.addEventListener('input', (e) => { currentTheme.topText = e.target.value; applyTheme(); saveTheme(); });
   themeGridBgVal.addEventListener('input', (e) => { currentTheme.gridBg = e.target.value; applyTheme(); saveTheme(); });
   themeCellOpacityVal.addEventListener('input', (e) => { currentTheme.cellOpacity = e.target.value; applyTheme(); saveTheme(); });
 
-  // 画像アップロード処理
   themeBgImageVal.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = function(event) {
-      currentTheme.bgImage = event.target.result; // Base64文字列
-      
-      // 画像を設定したら、見やすいように自動でマスの透明度を少し下げる（85%）
-      if(currentTheme.cellOpacity === 100) {
-        currentTheme.cellOpacity = 85;
-        themeCellOpacityVal.value = 85;
-      }
-      
-      applyTheme();
-      saveTheme();
+      currentTheme.bgImage = event.target.result;
+      if(currentTheme.cellOpacity === 100) { currentTheme.cellOpacity = 85; themeCellOpacityVal.value = 85; }
+      applyTheme(); saveTheme();
     };
     reader.readAsDataURL(file);
   });
 
   document.getElementById('clearBgImageBtn').addEventListener('click', () => {
-    currentTheme.bgImage = null;
-    themeBgImageVal.value = ''; // ファイル選択リセット
-    applyTheme();
-    saveTheme();
+    currentTheme.bgImage = null; themeBgImageVal.value = ''; applyTheme(); saveTheme();
   });
 
-  // 初回テーマ適用
   applyTheme();
 
   // --- 祝日データ取得処理 ---
@@ -476,8 +461,7 @@
 
   // --- スワイプ処理 ---
   const daysContainer = document.getElementById('days');
-  let touchStartX = 0; let touchStartY = 0; let touchEndX = 0; let touchEndY = 0;
-  let isSwiping = false;
+  let touchStartX = 0; let touchStartY = 0; let touchEndX = 0; let touchEndY = 0; let isSwiping = false;
 
   daysContainer.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; isSwiping = false; }, {passive: true});
   daysContainer.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; touchEndY = e.changedTouches[0].screenY; handleSwipe(); }, {passive: true});
@@ -493,23 +477,46 @@
 
   // --- カレンダー描画処理 ---
   const monthYearDisplay = document.getElementById('monthYear');
+  const weekdaysContainer = document.getElementById('weekdaysContainer');
   let currentDate = new Date();
   let selectedDateString = '';
 
   function renderCalendar() {
     const month = currentDate.getMonth(); const year = currentDate.getFullYear();
-    const firstDayIndex = new Date(year, month, 1).getDay();
-    const lastDay = new Date(year, month + 1, 0).getDate();
     const today = new Date();
+    const isMonStart = currentTheme.startOfWeek === 1;
     
+    // ヘッダーの年月
     monthYearDisplay.textContent = `${year}年 ${month + 1}月`;
-    daysContainer.innerHTML = '';
     
+    // ★追加: 曜日の動的描画（日・月始まりに対応）
+    weekdaysContainer.innerHTML = '';
+    const daysOfWeek = isMonStart ? ['月', '火', '水', '木', '金', '土', '日'] : ['日', '月', '火', '水', '木', '金', '土'];
+    daysOfWeek.forEach((day) => {
+      const div = document.createElement('div');
+      div.textContent = day;
+      if (day === '日') div.style.color = 'var(--danger-color)';
+      if (day === '土') div.style.color = '#3498db';
+      weekdaysContainer.appendChild(div);
+    });
+
+    // カレンダーの計算
+    daysContainer.innerHTML = '';
+    const firstDay = new Date(year, month, 1).getDay(); // 0(日) 〜 6(土)
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    
+    let firstDayIndex = firstDay;
+    if (isMonStart) {
+      firstDayIndex = firstDay === 0 ? 6 : firstDay - 1; // 月曜始まりの場合のズレを計算
+    }
+    
+    // 月始めの空白マス
     for (let x = 0; x < firstDayIndex; x++) {
       const emptyDiv = document.createElement('div'); emptyDiv.classList.add('day', 'empty');
       daysContainer.appendChild(emptyDiv);
     }
     
+    // 日付マス
     for (let i = 1; i <= lastDay; i++) {
       const dayDiv = document.createElement('div'); dayDiv.classList.add('day');
       const mm = String(month + 1).padStart(2, '0'); const dd = String(i).padStart(2, '0');
@@ -561,6 +568,14 @@
       dayDiv.appendChild(eventsContainer);
       dayDiv.addEventListener('click', (e) => { if (!isSwiping) openDayViewModal(dateString); });
       daysContainer.appendChild(dayDiv);
+    }
+    
+    // 月末の空白マス
+    const totalRenderedCells = firstDayIndex + lastDay;
+    const remainingEmptyCells = totalRenderedCells % 7 === 0 ? 0 : 7 - (totalRenderedCells % 7);
+    for (let j = 0; j < remainingEmptyCells; j++) {
+      const emptyDiv = document.createElement('div'); emptyDiv.classList.add('day', 'empty');
+      daysContainer.appendChild(emptyDiv);
     }
   }
 
@@ -708,31 +723,95 @@
   const eventStartTimeInput = document.getElementById('eventStartTime');
   const eventEndTimeInput = document.getElementById('eventEndTime');
   const eventCategorySelect = document.getElementById('eventCategory');
+  
+  // ★追加・修正: カテゴリー管理モーダル内の編集機能関連
   const categoryModalOverlay = document.getElementById('categoryModalOverlay');
   const categoryList = document.getElementById('categoryList');
+  let editingCategoryId = null; // 編集中のカテゴリーIDを保持
 
   function renderCategoryManagement() {
     categoryList.innerHTML = ''; eventCategorySelect.innerHTML = '';
     categories.forEach(cat => {
       const item = document.createElement('div'); item.className = 'category-item';
-      item.innerHTML = `<div><span class="category-color-box" style="background-color: ${cat.color};"></span>${cat.name}</div><button class="delete-cat-btn" data-id="${cat.id}">削除</button>`;
+      item.innerHTML = `
+        <div><span class="category-color-box" style="background-color: ${cat.color};"></span>${cat.name}</div>
+        <div>
+          <button class="cat-action-btn edit-cat-btn" data-id="${cat.id}">編集</button>
+          <button class="cat-action-btn delete-cat-btn" data-id="${cat.id}">削除</button>
+        </div>
+      `;
       categoryList.appendChild(item);
       const option = document.createElement('option'); option.value = cat.id; option.textContent = cat.name;
       eventCategorySelect.appendChild(option);
     });
+    
+    // 削除ボタン
     document.querySelectorAll('.delete-cat-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => { categories = categories.filter(c => c.id !== e.target.dataset.id); saveCategories(); renderCategoryManagement(); renderCalendar(); });
+      btn.addEventListener('click', (e) => { 
+        if(!confirm('このカテゴリーを削除しますか？')) return;
+        categories = categories.filter(c => c.id !== e.target.dataset.id); 
+        saveCategories(); renderCategoryManagement(); renderCalendar(); 
+      });
+    });
+
+    // 編集ボタン
+    document.querySelectorAll('.edit-cat-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const cat = categories.find(c => c.id === e.target.dataset.id);
+        if (cat) {
+          editingCategoryId = cat.id;
+          document.getElementById('newCategoryName').value = cat.name;
+          document.getElementById('newCategoryColor').value = cat.color;
+          document.getElementById('addCategoryBtn').textContent = '更新';
+          document.getElementById('categoryFormLabel').textContent = 'カテゴリーを編集';
+          document.getElementById('cancelEditCategoryBtn').style.display = 'block';
+        }
+      });
     });
   }
 
   document.getElementById('manageCategoriesBtn').addEventListener('click', () => { renderCategoryManagement(); categoryModalOverlay.style.display = 'flex'; });
-  document.getElementById('closeCategoryBtn').addEventListener('click', () => categoryModalOverlay.style.display = 'none');
-  document.getElementById('addCategoryBtn').addEventListener('click', () => {
-    const nameInput = document.getElementById('newCategoryName'); const colorInput = document.getElementById('newCategoryColor');
-    if (!nameInput.value.trim()) return alert('カテゴリー名を入力してください');
-    categories.push({ id: 'cat_' + Date.now(), name: nameInput.value.trim(), color: colorInput.value });
-    saveCategories(); renderCategoryManagement(); nameInput.value = '';
+  
+  document.getElementById('closeCategoryBtn').addEventListener('click', () => { 
+    categoryModalOverlay.style.display = 'none'; 
+    resetCategoryForm();
   });
+
+  // 編集キャンセルボタン
+  document.getElementById('cancelEditCategoryBtn').addEventListener('click', resetCategoryForm);
+
+  // カテゴリー追加 / 更新ボタン
+  document.getElementById('addCategoryBtn').addEventListener('click', () => {
+    const nameInput = document.getElementById('newCategoryName'); 
+    const colorInput = document.getElementById('newCategoryColor');
+    const nameValue = nameInput.value.trim();
+    if (!nameValue) return alert('カテゴリー名を入力してください');
+    
+    if (editingCategoryId) {
+      // 編集モード
+      const cat = categories.find(c => c.id === editingCategoryId);
+      if(cat) {
+        cat.name = nameValue;
+        cat.color = colorInput.value;
+      }
+    } else {
+      // 新規追加モード
+      categories.push({ id: 'cat_' + Date.now(), name: nameValue, color: colorInput.value });
+    }
+    
+    saveCategories(); renderCategoryManagement(); renderCalendar(); 
+    resetCategoryForm();
+  });
+
+  // カテゴリー入力フォームを初期状態に戻す
+  function resetCategoryForm() {
+    editingCategoryId = null;
+    document.getElementById('newCategoryName').value = '';
+    document.getElementById('newCategoryColor').value = '#3498db';
+    document.getElementById('addCategoryBtn').textContent = '追加';
+    document.getElementById('categoryFormLabel').textContent = '新規追加';
+    document.getElementById('cancelEditCategoryBtn').style.display = 'none';
+  }
 
   function openEventModal(dateString) {
     modalDateDisplay.textContent = `${dateString.replace(/-/g, '/')} の予定を追加`;
